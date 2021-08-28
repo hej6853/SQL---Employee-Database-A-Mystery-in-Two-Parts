@@ -257,38 +257,61 @@ last_name DESC
 As you examine the data, you are overcome with a creeping suspicion that the dataset is fake. You surmise that your boss handed you spurious data in order to test the data engineering skills of a new employee. To confirm your hunch, you decide to take the following steps to generate a visualization of the data, with which you will confront your boss:
 
 1. Import the SQL database into Pandas. (Yes, you could read the CSVs directly in Pandas, but you are, after all, trying to prove your technical mettle.) This step may require some research. Feel free to use the code below to get started. Be sure to make any necessary modifications for your username, password, host, port, and database name:
+```
+# connect to pgAdmin
 
-   ```sql
-   from sqlalchemy import create_engine
-   engine = create_engine('postgresql://localhost:5432/<your_db_name>')
-   connection = engine.connect()
-   ```
-
-* Consult [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/latest/core/engines.html#postgresql) for more information.
-
-* If using a password, do not upload your password to your GitHub repository. See [https://www.youtube.com/watch?v=2uaTPmNvH0I](https://www.youtube.com/watch?v=2uaTPmNvH0I) and [https://help.github.com/en/github/using-git/ignoring-files](https://help.github.com/en/github/using-git/ignoring-files) for more information.
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sqlalchemy import create_engine
+engine = create_engine("postgresql://postgres:{pass}@localhost:5432/Employee_Database") 
+connection = engine.connect()
+```
 
 2. Create a histogram to visualize the most common salary ranges for employees.
+```
+# Histogram
+#Create a histogram to visualize the most common salary ranges for employees.
+#Dataset
+salary = pd.read_sql("SELECT * from salaries", connection)
+salary['salary'].describe()
 
+#Histogram
+plt.style.use('ggplot')
+x_axis = list(salary['salary'])
+
+fig1, ax1 = plt.subplots(figsize = (6,6));
+ax1.hist(x_axis,bins = 15);
+ax1.set(title = 'salary histogram',
+      xlabel = 'salary',
+      ylabel = 'number of employee')
+```
 3. Create a bar chart of average salary by title.
+```
+# Bar Chart
+# Create a bar chart of average salary by title.
+#Dataset
+salaries = pd.read_sql("SELECT * FROM salaries", connection)
+employees = pd.read_sql("SELECT emp_no, emp_title_id FROM employees", connection)
+titles = pd.read_sql("SELECT * FROM titles", connection)
 
-## Epilogue
+emp_titles = employees.merge(titles, left_on = 'emp_title_id', right_on = 'title_id' )
+emp_titles_salaries = emp_titles.merge(salaries, left_on ='emp_no' ,right_on = 'emp_no')
 
-Evidence in hand, you march into your boss's office and present the visualization. With a sly grin, your boss thanks you for your work. On your way out of the office, you hear the words, "Search your ID number." You look down at your badge to see that your employee ID number is 499942.
+avg_salary = round(emp_titles_salaries.groupby('title')['salary'].agg('mean'),2).to_frame().reset_index().sort_values(by=['salary'])
 
-## Submission
+x_axis = avg_salary['title']
+y_axis = avg_salary['salary']
 
-* Create an image file of your ERD.
+#Bar Chart
 
-* Create a `.sql` file of your table schemata.
-
-* Create a `.sql` file of your queries.
-
-* (Optional) Create a Jupyter Notebook of the bonus analysis.
-
-* Create and upload a repository with the above files to GitHub and post a link on BootCamp Spot.
-
-* Ensure your repository has regular commits (i.e. 20+ commits) and a thorough README.md file
+fig2, ax2 = plt.subplots(figsize = (10,8))
+ax2.bar(x_axis, y_axis,  width = 0.65)
+ax2.set(title = 'Average Salary by title',
+       xlabel = 'title',
+       ylabel = 'Average Salary' )
+ax2.set_xticklabels(x_axis, rotation = 45)
+```
 
 ### Copyright
 
